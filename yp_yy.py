@@ -1,10 +1,11 @@
 """
-name:甬派
+name:甬派甬音
 author:食翔狂魔
-version:1.4
+version:1.6
 desc:每天最少0.4,支付宝现金
-date:2025-03-25
+date:2025-04-09
 log:增加代理、抽奖延时
+notice:必须使用真实id，所有的号都得在那个id的设备登录一次即可
 """
 
 import os
@@ -22,9 +23,9 @@ import urllib
 import execjs
 
 #品赞代理链接
-PINZAN = "https://service.ipzan.com/core-extract?num=1&no=2023092098103641&minute=61&format=j5son&pool=qua6lity&mode=aut5h&secret=6o1ohi1645642u0n3o"
+PINZAN = "https://service.ipzan.com/core-extract?num=1&no=2023094523641&minute=1&format=json&pool=quality&mode=auth&secret=6o187562u0n3o"
 
-isProxy = False #是否启用代理
+isProxy = True #是否启用代理
 
 # from notify import send
 def hide_phone_number(text):
@@ -469,7 +470,7 @@ class TASK:
         for id in acids:
             self.lottery_id = id
             self.lottery_Login_get()
-            time.sleep(15)
+            time.sleep(1)
 
     def lottery_Login_get(self):
         proxyMeta = self.getProxyMeta()
@@ -752,23 +753,23 @@ if __name__ == "__main__":
     user_str = ""  # os.environ.get("yp_user_data","[]")
     user_data_arr = [
         {
-            "name": "手机号1",
-            "pwd": "密码1",
-            "zfb_name": "unicode编码后的支付宝姓名1",
-            "zfb_account": "支付宝账号1",
-            "deviceId": "设备id1",
+            "name": "xxx",
+            "pwd": "xx",
+            "zfb_name": "xx",
+            "zfb_account": "xx",
+            "deviceId": "xxx",
             "disable": "n",
             "expire": "2024-10-19",
         },
         {
-            "name": "手机号2",
-            "pwd": "密码2",
-            "zfb_name": "unicode编码后的支付宝姓名2",
-            "zfb_account": "支付宝账号2",
-            "deviceId": "设备id2",
+            "name": "xx",
+            "pwd": "x",
+            "zfb_name": "xx",
+            "zfb_account": "xxx",
+            "deviceId": "xxx",
             "disable": "n",
             "expire": "2024-10-19",
-        },
+        }
     ]
     if len(user_data_arr) == 0:
         print("无账号！")
@@ -779,7 +780,7 @@ if __name__ == "__main__":
             TASK(index, user_data).run()
             if index != len(user_data_arr):
                 print(f"延迟运行15秒")
-                time.sleep(15)
+                time.sleep(1)
 
     # send('甬派', "\n<br />".join(glo_msg))
     print("\n<br />".join(glo_msg))
