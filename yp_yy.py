@@ -1,11 +1,10 @@
 """
-name:甬派甬音
+name:甬派
 author:食翔狂魔
-version:1.6
+version:1.5
 desc:每天最少0.4,支付宝现金
-date:2025-04-09
-log:增加代理、抽奖延时
-notice:必须使用真实id，所有的号都得在那个id的设备登录一次即可
+date:2025-04-16
+log:增加自动注册id
 """
 
 import os
@@ -21,12 +20,12 @@ from datetime import datetime, timedelta
 from urllib.parse import quote, urlparse, parse_qs
 import urllib
 import execjs
-
+devId = "e9de40c589453658" #devId
 #品赞代理链接
-PINZAN = "https://service.ipzan.com/core-extract?num=1&no=2023094523641&minute=1&format=json&pool=quality&mode=auth&secret=6o187562u0n3o"
+PINZAN = "https://service.ipzan.com/core-extract?num=1&no=20233641&minute=1&format=json&pool=quality&mode=auth&secret=6o1u0n3o"
 
 isProxy = True #是否启用代理
-
+doTask = True #是否做任务
 # from notify import send
 def hide_phone_number(text):
     if not text:
@@ -46,8 +45,10 @@ class TASK:
         self.pwd = account.get("pwd", None)
         self.zfb_name = account.get("zfb_name", None)
         self.zfb_account = account.get("zfb_account", None)
-        self.deviceId = account.get("deviceId", None)
-        self.model = self.generate_random_device()["model"]
+        self.deviceId = self.register_device_code() #account.get("deviceId", None)
+        self.deviceId2 = account.get("deviceId", None)
+        self.model = self.generate_random_string()
+        self.vendor = self.generate_random_string()
         self.user_id = None
         self.nick_name = None
         self.ua = None
@@ -81,6 +82,16 @@ class TASK:
     def log_err(self, msg):
         print(f"用户{self.index}【{hide_phone_number(self.name)}】：{msg}")
 
+    def generate_random_string(self):
+        length = random.randint(5, 8)
+        characters = string.ascii_letters + string.digits
+        random_string = ''.join(random.choices(characters, k=length))
+        return random_string
+    def generate_random_string2(self):
+        length = 15
+        characters = string.ascii_letters + string.digits
+        random_string = ''.join(random.choices(characters, k=length))
+        return random_string
     def generate_random_device(self):
         device_id = self.generate_device_id()
         models = [
@@ -159,7 +170,17 @@ class TASK:
         if res.status_code == 200:
             return res.json()
         return None
+    def register_device_code(self):
+        url = "http://101.42.152.146:3030/deviceRegister"
+        response = requests.get(url)#
 
+        print(response.text)
+        res = response.json()
+        if res["msg"] == "注册成功":
+            return res["devID"]
+        else:
+            return self.deviceId2
+        
     def login(self):
         now = int(time.time() * 1000)
         raw = f"globalDatetime{str(now)}username{self.name}test_123456679890123456"
@@ -199,6 +220,7 @@ class TASK:
                 self.msg += f"\n【用户昵称】：{rj['data']['nickname']}"
                 self.msg += f"\n【绑定手机】：{hide_phone_number(rj['data']['mobile'])}"
                 self.user_id = rj["data"]["userId"]
+                self.log_info(f"用户id：{self.user_id}")
                 self.query_token = rj["data"]["token"]
                 self.nick_name = rj["data"]["nickname"]
                 self.jwtToken = rj["data"]["jwtToken"]
@@ -531,8 +553,9 @@ class TASK:
                             self.msg += f"\n【抽奖次数】：{res['element']['freeLimit']}"
                         count = res["element"]["freeLimit"]
                         self.log_info(count)
-                        # if count == 0:
-                        #     return
+                        
+                        if count == 0:
+                            return
                         for no in range(0, 1):
                             token_data = {
                                 "timestamp": int(time.time() * 1000),
@@ -736,7 +759,8 @@ class TASK:
             self.login_get()
             if self.news_list():
                 self.news_detail()
-                self.task_list()
+                if doTask == True:
+                    self.task_list()
                 self.lottery_Login_get()
                 self.hear()
                 self.user_info()
@@ -753,23 +777,23 @@ if __name__ == "__main__":
     user_str = ""  # os.environ.get("yp_user_data","[]")
     user_data_arr = [
         {
-            "name": "xxx",
-            "pwd": "xx",
-            "zfb_name": "xx",
-            "zfb_account": "xx",
-            "deviceId": "xxx",
+            "name": "登录账号",
+            "pwd": "密码",
+            "zfb_name": "支付宝姓名(unicode编码一下,百度直接搜)",
+            "zfb_account": "支付宝账号",
+            "deviceId": "设备id(填不填都行)",
             "disable": "n",
             "expire": "2024-10-19",
         },
         {
-            "name": "xx",
-            "pwd": "x",
-            "zfb_name": "xx",
-            "zfb_account": "xxx",
-            "deviceId": "xxx",
+            "name": "登录账号",
+            "pwd": "密码",
+            "zfb_name": "支付宝姓名(unicode编码一下,百度直接搜)",
+            "zfb_account": "支付宝账号",
+            "deviceId": "设备id(填不填都行)",
             "disable": "n",
             "expire": "2024-10-19",
-        }
+        },
     ]
     if len(user_data_arr) == 0:
         print("无账号！")
@@ -779,7 +803,7 @@ if __name__ == "__main__":
         if user_data["disable"] != "y":
             TASK(index, user_data).run()
             if index != len(user_data_arr):
-                print(f"延迟运行15秒")
+                print(f"延迟运行1秒")
                 time.sleep(1)
 
     # send('甬派', "\n<br />".join(glo_msg))
