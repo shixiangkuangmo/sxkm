@@ -1,10 +1,10 @@
 """
 name:甬派
 author:食翔狂魔
-version:1.5
+version:1.7
 desc:每天最少0.4,支付宝现金
-date:2025-04-16
-log:增加自动注册id
+date:2025-04-16 21:26:43
+log:增加农场相关功能(二改妖火@重庆第一深情)、修复Id获取异常
 """
 
 import os
@@ -22,10 +22,10 @@ import urllib
 import execjs
 devId = "e9de40c589453658" #devId
 #品赞代理链接
-PINZAN = "https://service.ipzan.com/core-extract?num=1&no=20233641&minute=1&format=json&pool=quality&mode=auth&secret=6o1u0n3o"
+PINZAN = "https://service.ipzan.com/core-extract?num=1&no=202641&minute=1&format=json&pool=quality&mode=auth&secret=63o"
 
 isProxy = True #是否启用代理
-doTask = True #是否做任务
+doTask = True
 # from notify import send
 def hide_phone_number(text):
     if not text:
@@ -45,11 +45,13 @@ class TASK:
         self.pwd = account.get("pwd", None)
         self.zfb_name = account.get("zfb_name", None)
         self.zfb_account = account.get("zfb_account", None)
-        self.deviceId = self.register_device_code() #account.get("deviceId", None)
+        self.isTx = account.get("tx", "y")
         self.deviceId2 = account.get("deviceId", None)
+        self.deviceId = self.register_device_code() #account.get("deviceId", None)
         self.model = self.generate_random_string()
         self.vendor = self.generate_random_string()
         self.user_id = None
+        self.setCk = ""
         self.nick_name = None
         self.ua = None
         self.token = None
@@ -64,6 +66,8 @@ class TASK:
         self.proxies = None
         self.push_user_id = account.get("push_user_id", None)
         self.push_im_type = account.get("push_im_type", None)
+        self.ncID = None
+        self.ncOpenID = None
 
     @staticmethod
     def generate_device_code():
@@ -172,9 +176,7 @@ class TASK:
         return None
     def register_device_code(self):
         url = "http://101.42.152.146:3030/deviceRegister"
-        response = requests.get(url)#
-
-        print(response.text)
+        response = requests.get(url)
         res = response.json()
         if res["msg"] == "注册成功":
             return res["devID"]
@@ -224,6 +226,7 @@ class TASK:
                 self.query_token = rj["data"]["token"]
                 self.nick_name = rj["data"]["nickname"]
                 self.jwtToken = rj["data"]["jwtToken"]
+                self.setCk = res.headers.get('Set-Cookie', '').split(';')[0]
                 return True
         self.log_info(f"login  {res.text}")
 
@@ -753,6 +756,180 @@ class TASK:
             self.msg += f"\n【甬音】：刷取时长失败❌"
             self.log_info(f"甬音刷取时长失败！")
 
+
+    def getFruit(self):
+        sgsurl = "https://kzsv.cnnb.com.cn/Server/ypfarmapi/"
+        sgsparams = {'action': "client_harvest"}
+        sgspayload = {'userId': self.ncID}
+        ncdlheaders = {
+            'User-Agent': "Mozilla/5.0 (Linux; Android 12; Redmi K30 Pro Build/SKQ1.211006.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/135.0.7049.38 Mobile Safari/537.36 agentweb/4.0.2  UCBrowser/11.6.4.950 yongpai",
+            'Accept-Encoding': "gzip, deflate, br, zstd",
+            'sec-ch-ua-platform': "\"Android\"",
+            'sec-ch-ua': "\"Android WebView\";v=\"135\", \"Not-A.Brand\";v=\"8\", \"Chromium\";v=\"135\"",
+            'sec-ch-ua-mobile': "?1",
+            'origin': "https://kzsv.cnnb.com.cn",
+            'x-requested-with': "io.dcloud.H55BDF6BE",
+            'sec-fetch-site': "same-origin",
+            'sec-fetch-mode': "cors",
+            'sec-fetch-dest': "empty",
+            'referer': "https://kzsv.cnnb.com.cn/YPFarm/?time=1236",
+            'accept-language': "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+            'priority': "u=1, i",
+            'Cookie': self.setCk
+        }
+        sgsresponse = requests.post(sgsurl, params=sgsparams, data=sgspayload, headers=ncdlheaders)
+        if '200' in sgsresponse.text:
+            self.msg += f"\n【收果实】：成功✅"
+            self.log_info(f"\n【收果实】：成功✅")
+        elif '402' in sgsresponse.text:
+            self.msg += f"\n【收果实】：您的果树还没有结果哦，请继续栽培！❌"
+            self.log_info(f"【收果实】：您的果树还没有结果哦，请继续栽培！❌")
+        else:
+            self.msg += f"\n【收果实】：失败❌"
+            self.log_info(f"【收果实】：失败❌")
+            print(sgsresponse.text)
+    def getFruitJf(self):
+        dhjfurl = "https://kzsv.cnnb.com.cn/Server/ypfarmapi/"
+        dhjfparams = {'action': "client_operation"}
+        dhjfpayload = {'userId': self.ncID,'type': '3','openId': self.ncOpenID}
+        ncdlheaders = {
+            'User-Agent': "Mozilla/5.0 (Linux; Android 12; Redmi K30 Pro Build/SKQ1.211006.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/135.0.7049.38 Mobile Safari/537.36 agentweb/4.0.2  UCBrowser/11.6.4.950 yongpai",
+            'Accept-Encoding': "gzip, deflate, br, zstd",
+            'sec-ch-ua-platform': "\"Android\"",
+            'sec-ch-ua': "\"Android WebView\";v=\"135\", \"Not-A.Brand\";v=\"8\", \"Chromium\";v=\"135\"",
+            'sec-ch-ua-mobile': "?1",
+            'origin': "https://kzsv.cnnb.com.cn",
+            'x-requested-with': "io.dcloud.H55BDF6BE",
+            'sec-fetch-site': "same-origin",
+            'sec-fetch-mode': "cors",
+            'sec-fetch-dest': "empty",
+            'referer': "https://kzsv.cnnb.com.cn/YPFarm/?time=1236",
+            'accept-language': "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+            'priority': "u=1, i",
+            'Cookie': self.setCk
+        }
+        dhjfresponse = requests.post(dhjfurl, params=dhjfparams, data=dhjfpayload, headers=ncdlheaders)
+        if '200' in dhjfresponse.text:
+            self.msg += f"\n【果实兑换】：成功✅"
+            self.log_info(f"\n【果实兑换】：成功✅")
+        elif '503' in dhjfresponse.text:
+            self.msg += f"\n【果实兑换】：物品数量有误，请确定后重试！❌"
+            self.log_info(f"【果实兑换】：物品数量有误，请确定后重试！❌")
+        else:
+            self.msg += f"\n【收果实】：失败❌"
+            self.log_info(f"【收果实】：失败❌")
+            print(f"\n兑换积分：\n{dhjfresponse.text}")
+        
+    def make_request(self,NCURL,NCPARAMS,action):
+        try:
+            ncdlheaders = {
+                'User-Agent': "Mozilla/5.0 (Linux; Android 12; Redmi K30 Pro Build/SKQ1.211006.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/135.0.7049.38 Mobile Safari/537.36 agentweb/4.0.2  UCBrowser/11.6.4.950 yongpai",
+                'Accept-Encoding': "gzip, deflate, br, zstd",
+                'sec-ch-ua-platform': "\"Android\"",
+                'sec-ch-ua': "\"Android WebView\";v=\"135\", \"Not-A.Brand\";v=\"8\", \"Chromium\";v=\"135\"",
+                'sec-ch-ua-mobile': "?1",
+                'origin': "https://kzsv.cnnb.com.cn",
+                'x-requested-with': "io.dcloud.H55BDF6BE",
+                'sec-fetch-site': "same-origin",
+                'sec-fetch-mode': "cors",
+                'sec-fetch-dest': "empty",
+                'referer': "https://kzsv.cnnb.com.cn/YPFarm/?time=1236",
+                'accept-language': "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                'priority': "u=1, i",
+                'Cookie': self.setCk
+            }
+            response = requests.post(NCURL, params=NCPARAMS, data=action['payload'], headers=ncdlheaders)
+            if '200' in response.text:
+                self.msg += f"\n【农场任务】：{action['action']}成功😘"
+                self.log_info(f"\n【农场任务】：{action['action']}成功😘")
+            elif '502' in response.text:
+                self.msg += f"\n【农场任务】：已经{action['action']}了😖"
+                self.log_info(f"\n【农场任务】：已经{action['action']}了😖")
+            else:
+                self.msg += f"\n【农场任务】：{action['action']}失败😵"
+                self.log_info(f"【农场任务】：{action['action']}失败😵")
+                print(response.text)
+        except requests.RequestException as e:
+            print(f"请求错误: {e}")
+    def farmDaily(self):
+        NCURL = "https://kzsv.cnnb.com.cn/Server/ypfarmapi/"
+        NCPARAMS = {'action': "client_interactive"}
+
+        actions = [
+            {'action': '浇水', 'payload': {'userId': '84390', 'type': '100'}},
+            {'action': '施肥', 'payload': {'userId': '84390', 'type': '10'}},
+            {'action': '除草', 'payload': {'userId': '84390', 'type': '1'}}
+        ]
+        for action in actions:
+            self.msg += f"\n【农场任务】：开始{action['action']}😘"
+            self.log_info(f"\n【农场任务】：开始{action['action']}😘")
+            self.make_request(NCURL,NCPARAMS,action)
+        self.getFruit()
+
+        
+    def getSeed(self):
+        lqzzurl = "https://kzsv.cnnb.com.cn/Server/ypfarmapi/"
+        lqzzparams = { 'action': "client_operation"}
+        lqzzpayload = {  'userId': self.ncID,'type': '0','openId': self.ncOpenID}
+        ncdlheaders = {
+            'User-Agent': "Mozilla/5.0 (Linux; Android 12; Redmi K30 Pro Build/SKQ1.211006.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/135.0.7049.38 Mobile Safari/537.36 agentweb/4.0.2  UCBrowser/11.6.4.950 yongpai",
+            'Accept-Encoding': "gzip, deflate, br, zstd",
+            'sec-ch-ua-platform': "\"Android\"",
+            'sec-ch-ua': "\"Android WebView\";v=\"135\", \"Not-A.Brand\";v=\"8\", \"Chromium\";v=\"135\"",
+            'sec-ch-ua-mobile': "?1",
+            'origin': "https://kzsv.cnnb.com.cn",
+            'x-requested-with': "io.dcloud.H55BDF6BE",
+            'sec-fetch-site': "same-origin",
+            'sec-fetch-mode': "cors",
+            'sec-fetch-dest': "empty",
+            'referer': "https://kzsv.cnnb.com.cn/YPFarm/?time=1236",
+            'accept-language': "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+            'priority': "u=1, i",
+            'Cookie': self.setCk
+        }
+        lqzz = requests.post(lqzzurl, params=lqzzparams, data=lqzzpayload, headers=ncdlheaders)
+        if '200' in lqzz.text:
+            self.msg += f"\n【种子】：领取成功✅"
+            self.log_info(f"【种子】：领取成功✅")
+        else:
+            self.msg += f"\n【种子】：领取失败,{json.loads(lqzz.content.decode('utf-8-sig'))['data']}❌"
+            self.log_info(f"【种子】：领取失败,{json.loads(lqzz.content.decode('utf-8-sig'))['data']}❌")
+        
+        self.farmDaily()
+    #农场部分来自妖火 重庆第一深情 二改
+    def farm(self):
+        ncdlurl = "https://kzsv.cnnb.com.cn/Server/ypfarmapi/"
+        ncdlparams = {'action': "client_login"}
+        ncdlpayload = {'userId': self.user_id,'nickname': self.nick_name,'token': self.query_token}
+        ncdlheaders = {
+        'User-Agent': "Mozilla/5.0 (Linux; Android 12; Redmi K30 Pro Build/SKQ1.211006.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/135.0.7049.38 Mobile Safari/537.36 agentweb/4.0.2  UCBrowser/11.6.4.950 yongpai",
+        'Accept-Encoding': "gzip, deflate, br, zstd",
+        'sec-ch-ua-platform': "\"Android\"",
+        'sec-ch-ua': "\"Android WebView\";v=\"135\", \"Not-A.Brand\";v=\"8\", \"Chromium\";v=\"135\"",
+        'sec-ch-ua-mobile': "?1",
+        'origin': "https://kzsv.cnnb.com.cn",
+        'x-requested-with': "io.dcloud.H55BDF6BE",
+        'sec-fetch-site': "same-origin",
+        'sec-fetch-mode': "cors",
+        'sec-fetch-dest': "empty",
+        'referer': "https://kzsv.cnnb.com.cn/YPFarm/?time=1236",
+        'accept-language': "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+        'priority': "u=1, i",
+        'Cookie': self.setCk
+        }
+        response = requests.post(ncdlurl, headers=ncdlheaders, data=ncdlpayload, params=ncdlparams)
+        if '200' in response.text:
+            self.msg += f"\n【农场】：登录成功✅"
+            self.log_info(f"【农场】：登录成功✅")
+            response_text = response.content.decode('utf-8-sig')
+            ncdljson = json.loads(response_text)
+            self.ncID = ncdljson['data']['userinfo']['ID']
+            self.ncOpenID = ncdljson['data']['userinfo']['OpenID']
+            self.getSeed()
+        else:
+            self.msg += f"\n【农场】：登录失败❌"
+            self.log_info(f"【农场】：登录失败❌")
+            print(response.text)
     def run(self):
         self.msg = f"【账号备注】：{hide_phone_number(self.name)}"
         if self.login():
@@ -761,10 +938,12 @@ class TASK:
                 self.news_detail()
                 if doTask == True:
                     self.task_list()
-                self.lottery_Login_get()
-                self.hear()
-                self.user_info()
-                self.getLottery_List()
+                if self.isTx == "y":
+                    self.lottery_Login_get()
+                    self.hear()
+                    self.user_info()
+                    self.getLottery_List()
+                self.farm()
             else:
                 self.msg += f"\n【获取抽奖】：抓取抽奖活动失败❌，请改日再来。"
         print(self.msg)
@@ -781,7 +960,7 @@ if __name__ == "__main__":
             "pwd": "密码",
             "zfb_name": "支付宝姓名(unicode编码一下,百度直接搜)",
             "zfb_account": "支付宝账号",
-            "deviceId": "设备id(填不填都行)",
+            "deviceId": "设备id(填不填都行,最好填)",
             "disable": "n",
             "expire": "2024-10-19",
         },
@@ -790,7 +969,7 @@ if __name__ == "__main__":
             "pwd": "密码",
             "zfb_name": "支付宝姓名(unicode编码一下,百度直接搜)",
             "zfb_account": "支付宝账号",
-            "deviceId": "设备id(填不填都行)",
+            "deviceId": "设备id(填不填都行,最好填)",
             "disable": "n",
             "expire": "2024-10-19",
         },
